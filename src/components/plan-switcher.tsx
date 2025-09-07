@@ -14,6 +14,7 @@ interface PlanSwitcherProps {
 
 export function PlanSwitcher({ currentPlan, onPlanChange, compact = false, disabled = false }: PlanSwitcherProps) {
   const [loading, setLoading] = useState<string | null>(null)
+  const [isAnnual, setIsAnnual] = useState(false)
 
   const handlePlanChange = async (plan: "free" | "pro") => {
     if (disabled || loading) return
@@ -24,6 +25,7 @@ export function PlanSwitcher({ currentPlan, onPlanChange, compact = false, disab
         // Use Better Auth Stripe client to upgrade to pro
         const { error } = await authClient.subscription.upgrade({
           plan: "pro",
+          annual: isAnnual, // Use the annual toggle
           successUrl: `${window.location.origin}/dashboard?upgraded=true`,
           cancelUrl: `${window.location.origin}/pricing`,
         })
@@ -52,6 +54,16 @@ export function PlanSwitcher({ currentPlan, onPlanChange, compact = false, disab
   if (compact) {
     return (
       <div className="flex items-center gap-1">
+        {/* Billing toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsAnnual(!isAnnual)}
+          className="h-7 px-2 text-xs"
+          title={`Switch to ${isAnnual ? 'Monthly' : 'Yearly'}`}
+        >
+          {isAnnual ? "Yearly" : "Monthly"}
+        </Button>
         <Button
           variant={currentPlan === "free" ? "default" : "outline"}
           size="sm"
@@ -68,7 +80,7 @@ export function PlanSwitcher({ currentPlan, onPlanChange, compact = false, disab
           disabled={disabled || loading === "pro"}
           className="h-7 px-2 text-xs"
         >
-          {loading === "pro" ? "..." : "Pro"}
+          {loading === "pro" ? "..." : `Pro ${isAnnual ? '$120/yr' : '$12/mo'}`}
         </Button>
       </div>
     )

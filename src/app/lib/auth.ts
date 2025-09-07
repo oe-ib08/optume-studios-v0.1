@@ -50,7 +50,8 @@ export const auth = betterAuth({
                         },
                         {
                             name: "pro",
-                            priceId: process.env.STRIPE_PRO_PRICE_ID || "price_placeholder",
+                            priceId: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || "price_placeholder",
+                            annualDiscountPriceId: process.env.STRIPE_PRO_YEARLY_PRICE_ID || "price_placeholder_yearly",
                             limits: {
                                 projects: 10,
                                 storage: 10
