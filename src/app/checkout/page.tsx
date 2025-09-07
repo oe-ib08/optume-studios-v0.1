@@ -50,12 +50,6 @@ function CheckoutContent() {
     
     setIsProcessing(true);
     try {
-      // Check if Stripe is properly configured
-      if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 
-          process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY === "pk_test_placeholder") {
-        throw new Error("Payment processing is not configured. Please contact support.");
-      }
-
       // Ensure user has a Stripe customer before checkout
       const customerResponse = await fetch('/api/create-customer', {
         method: 'POST',
