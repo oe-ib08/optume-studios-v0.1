@@ -13,27 +13,13 @@ import { Label } from "@/components/ui/label";
 export default function UpgradePage() {
   const { data: session } = useSession();
   const [isYearly, setIsYearly] = useState(false);
-  const [isUpgrading, setIsUpgrading] = useState(false);
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = () => {
     if (!session?.user) return;
     
-    setIsUpgrading(true);
-    try {
-      const result = await authClient.subscription.upgrade({
-        plan: "pro",
-        annual: isYearly,
-      });
-      
-      if (result.data?.url) {
-        window.location.href = result.data.url;
-      }
-    } catch (error) {
-      console.error("Error upgrading to pro:", error);
-      alert("Failed to start upgrade process. Please try again.");
-    } finally {
-      setIsUpgrading(false);
-    }
+    // Navigate to checkout page with plan details
+    const checkoutUrl = `/checkout?plan=pro&billing=${isYearly ? 'yearly' : 'monthly'}`;
+    window.location.href = checkoutUrl;
   };
 
   const monthlyPrice = 12;
@@ -202,9 +188,8 @@ export default function UpgradePage() {
                 className="w-full" 
                 size="lg"
                 onClick={handleUpgrade}
-                disabled={isUpgrading}
               >
-                {isUpgrading ? "Processing..." : "Upgrade to Pro"}
+                Upgrade to Pro
               </Button>
             </CardFooter>
           </Card>

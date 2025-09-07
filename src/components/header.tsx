@@ -20,7 +20,6 @@ import { authClient } from "@/app/lib/auth-client"
 import Link from "next/link"
 import { Sparkles } from "lucide-react"
 import SearchBar from "@/components/search-bar"
-import { PlanSwitcher } from "@/components/plan-switcher"
 
 // Navigation links array to be used in both desktop and mobile menus
 const navigationLinks = [
@@ -149,22 +148,18 @@ export default function Header() {
                 <Button 
                   size="sm" 
                   className="text-sm max-sm:aspect-square max-sm:p-0"
+                  asChild
                 >
-                  <Sparkles
-                    className="opacity-60 sm:-ms-1"
-                    size={16}
-                    aria-hidden="true"
-                  />
-                  <span className="max-sm:sr-only">Upgrade to Pro</span>
+                  <Link href="/upgrade">
+                    <Sparkles
+                      className="opacity-60 sm:-ms-1"
+                      size={16}
+                      aria-hidden="true"
+                    />
+                    <span className="max-sm:sr-only">Upgrade to Pro</span>
+                  </Link>
                 </Button>
               )}
-              {/* Development plan switcher */}
-              <div className="max-sm:hidden">
-                <PlanSwitcher 
-                  currentPlan={userPlan} 
-                  compact={true}
-                />
-              </div>
               <UserAvatar 
                 user={{
                   name: session.user.name,
