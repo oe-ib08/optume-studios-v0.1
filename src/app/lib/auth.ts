@@ -10,7 +10,7 @@ import Stripe from "stripe";
 // Auth configuration with Stripe integration
 
 // Initialize Stripe client with environment variable
-const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
+const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2025-08-27.basil",
 });
 
@@ -18,7 +18,7 @@ const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeh
 export async function createStripeCustomer(userData: { id: string; email: string; name: string }) {
     try {
         // Only create if Stripe is properly configured
-        if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === "sk_test_placeholder") {
+        if (!process.env.STRIPE_SECRET_KEY) {
             console.log("Stripe not configured, skipping customer creation");
             return null;
         }
@@ -74,8 +74,8 @@ export const auth = betterAuth({
     plugins: [
         stripe({
             stripeClient,
-            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
-            stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder",
+            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+            stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
             createCustomerOnSignUp: false, // Keep disabled for signup reliability
             onCustomerCreate: async ({ stripeCustomer, user }) => {
                 console.log(`Stripe customer ${stripeCustomer.id} created for user ${user.id}`);

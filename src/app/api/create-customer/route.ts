@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
     
     // Skip if Stripe is not configured
-    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === "sk_test_placeholder") {
+    if (!process.env.STRIPE_SECRET_KEY) {
       console.log("Stripe not configured, skipping customer creation");
       return NextResponse.json({ 
         success: true, 
