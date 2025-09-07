@@ -12,6 +12,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
+    // Skip if Stripe is not configured
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === "sk_test_placeholder") {
+      console.log("Stripe not configured, skipping customer creation");
+      return NextResponse.json({ 
+        success: true, 
+        message: "Stripe not configured",
+        customerId: null 
+      });
+    }
+    
     // Create Stripe customer for the user
     const customer = await createStripeCustomer({
       id: session.user.id,

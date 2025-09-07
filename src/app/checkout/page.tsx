@@ -44,12 +44,18 @@ function CheckoutContent() {
 
   const handleCheckout = async () => {
     if (!session?.user) {
-      router.push("/login");
+      router.push("/login?redirect=/checkout");
       return;
     }
     
     setIsProcessing(true);
     try {
+      // Check if Stripe is properly configured
+      if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 
+          process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY === "pk_test_placeholder") {
+        throw new Error("Payment processing is not configured. Please contact support.");
+      }
+
       // Ensure user has a Stripe customer before checkout
       const customerResponse = await fetch('/api/create-customer', {
         method: 'POST',
@@ -71,19 +77,27 @@ function CheckoutContent() {
       if (result.data?.url) {
         // Redirect to Stripe Checkout
         window.location.href = result.data.url;
+      } else if (result.error) {
+        throw new Error(result.error.message || "Failed to create checkout session");
       } else {
         throw new Error("No checkout URL received");
       }
     } catch (error) {
       console.error("Error creating checkout session:", error);
-      alert("Failed to start checkout process. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Failed to start checkout process. Please try again.";
+      alert(errorMessage);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Development helper to test plan updates
+  // Development helper to test plan updates - only for development
   const handleDevUpgrade = async () => {
+    if (process.env.NODE_ENV !== 'development') {
+      console.warn("Development helper not available in production");
+      return;
+    }
+    
     try {
       const response = await fetch('/api/dev/update-plan', {
         method: 'POST',
@@ -97,7 +111,8 @@ function CheckoutContent() {
         alert('Plan updated to Pro! (Development mode)');
         window.location.href = '/dashboard';
       } else {
-        alert('Failed to update plan');
+        const error = await response.json();
+        alert(`Failed to update plan: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error updating plan:', error);

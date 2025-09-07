@@ -66,13 +66,29 @@ export function SignupForm({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await signUp.email({
+      const result = await signUp.email({
         email: values.email,
         password: values.password,
         name: values.username,
       });
+      
+      if (result.data?.user) {
+        // Try to create Stripe customer after successful signup
+        try {
+          await fetch('/api/create-customer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+        } catch (customerError) {
+          console.warn("Failed to create Stripe customer:", customerError);
+          // Don't block signup flow if Stripe customer creation fails
+        }
+      }
+      
       toast.success("Account created successfully!");
-      router.push('/');
+      router.push('/dashboard');
     } catch (error) {
       toast.error("Failed to create account. Please try again.");
       console.error("Signup error:", error);
@@ -84,9 +100,9 @@ export function SignupForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
+          <CardTitle className="text-xl">Create an Account</CardTitle>
           <CardDescription>
-            Login with your Google account
+            Sign up with your Google account or email
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -101,7 +117,7 @@ export function SignupForm({
                       fill="currentColor"
                     />
                   </svg>
-                  Login with Google
+                  Sign up with Google
                 </Button>
               </div>
               <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
@@ -121,7 +137,7 @@ export function SignupForm({
                           <Input placeholder="Your username" {...field} />
                         </FormControl>
                         <FormDescription>
-                          This is your public display name.
+                          Choose a unique username for your account.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -164,15 +180,15 @@ export function SignupForm({
                     </a>
                   </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Login"}
+                  {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Create Account"}
                 </Button>
               </div>
             </div>
             </div>
             <div className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <a href="#" className="underline underline-offset-4">
-                Sign up
+              Already have an account?{" "}
+              <a href="/login" className="underline underline-offset-4">
+                Sign in
               </a>
             </div>
           </form>
