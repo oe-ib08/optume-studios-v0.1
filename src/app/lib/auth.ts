@@ -1,5 +1,7 @@
 // Update the import path to the correct location of drizzle.ts
 import { db } from "../../db/drizzle";
+import { user } from "../../db/schema";
+import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { stripe } from "@better-auth/stripe";
@@ -13,7 +15,7 @@ const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeh
 });
 
 // Helper function to create Stripe customer after user signup
-export async function createStripeCustomer(user: { id: string; email: string; name: string }) {
+export async function createStripeCustomer(userData: { id: string; email: string; name: string }) {
     try {
         // Only create if Stripe is properly configured
         if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === "sk_test_placeholder") {
@@ -21,16 +23,28 @@ export async function createStripeCustomer(user: { id: string; email: string; na
             return null;
         }
 
+        // Check if user already has a customer ID in the database
+        const existingUser = await db.select().from(user).where(eq(user.id, userData.id)).limit(1);
+        if (existingUser[0]?.stripeCustomerId) {
+            console.log(`User ${userData.id} already has Stripe customer ${existingUser[0].stripeCustomerId}`);
+            return { id: existingUser[0].stripeCustomerId };
+        }
+
         const customer = await stripeClient.customers.create({
-            email: user.email,
-            name: user.name,
+            email: userData.email,
+            name: userData.name,
             metadata: {
-                userId: user.id,
+                userId: userData.id,
                 referralSource: "direct"
             }
         });
         
-        console.log(`Stripe customer ${customer.id} created for user ${user.id}`);
+        // Update the user record with the Stripe customer ID
+        await db.update(user).set({ 
+            stripeCustomerId: customer.id 
+        }).where(eq(user.id, userData.id));
+        
+        console.log(`Stripe customer ${customer.id} created and saved for user ${userData.id}`);
         return customer;
     } catch (error) {
         console.error("Failed to create Stripe customer:", error);
@@ -61,8 +75,20 @@ export const auth = betterAuth({
         stripe({
             stripeClient,
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
-            createCustomerOnSignUp: false, // Disable automatic customer creation to prevent signup failures
-            ensureCustomerExists: true, // Ensure customer exists when needed
+            createCustomerOnSignUp: true, // Re-enable customer creation
+            onCustomerCreate: async ({ stripeCustomer, user }) => {
+                console.log(`Stripe customer ${stripeCustomer.id} created for user ${user.id}`);
+            },
+            getCustomerCreateParams: async ({ user }) => {
+                return {
+                    name: user.name,
+                    email: user.email,
+                    metadata: {
+                        userId: user.id,
+                        referralSource: "direct"
+                    }
+                };
+            },
             subscription: {
                 enabled: true,
                 plans: [
