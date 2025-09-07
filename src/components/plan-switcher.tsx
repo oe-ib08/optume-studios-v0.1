@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { authClient } from "@/app/lib/auth-client"
 
 interface PlanSwitcherProps {
   currentPlan: "free" | "pro"
@@ -14,38 +14,23 @@ interface PlanSwitcherProps {
 
 export function PlanSwitcher({ currentPlan, onPlanChange, compact = false, disabled = false }: PlanSwitcherProps) {
   const [loading, setLoading] = useState<string | null>(null)
-  const [isAnnual, setIsAnnual] = useState(false)
+  const router = useRouter()
 
-  const handlePlanChange = async (plan: "free" | "pro") => {
+  const handleUpgrade = () => {
     if (disabled || loading) return
+    router.push('/upgrade')
+  }
 
-    setLoading(plan)
+  const handleDowngrade = async () => {
+    if (disabled || loading) return
+    
+    setLoading("free")
     try {
-      if (plan === "pro") {
-        // Use Better Auth Stripe client to upgrade to pro
-        const { error } = await authClient.subscription.upgrade({
-          plan: "pro",
-          annual: isAnnual, // Use the annual toggle
-          successUrl: `${window.location.origin}/dashboard?upgraded=true`,
-          cancelUrl: `${window.location.origin}/pricing`,
-        })
-        
-        if (error) {
-          console.error("Error upgrading to pro:", error)
-          return false
-        }
-        // The upgrade function redirects to Stripe Checkout, so we don't need to update local state
-      } else {
-        // For downgrading to free, we'd typically use the cancel subscription
-        // For now, we'll call the onPlanChange if provided
-        if (onPlanChange) {
-          await onPlanChange(plan)
-        }
+      if (onPlanChange) {
+        await onPlanChange("free")
       }
-      return true
     } catch (error) {
-      console.error("Error changing plan:", error)
-      return false
+      console.error("Error downgrading plan:", error)
     } finally {
       setLoading(null)
     }
@@ -54,21 +39,11 @@ export function PlanSwitcher({ currentPlan, onPlanChange, compact = false, disab
   if (compact) {
     return (
       <div className="flex items-center gap-1">
-        {/* Billing toggle */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsAnnual(!isAnnual)}
-          className="h-7 px-2 text-xs"
-          title={`Switch to ${isAnnual ? 'Monthly' : 'Yearly'}`}
-        >
-          {isAnnual ? "Yearly" : "Monthly"}
-        </Button>
         <Button
           variant={currentPlan === "free" ? "default" : "outline"}
           size="sm"
-          onClick={() => handlePlanChange("free")}
-          disabled={disabled || loading === "free"}
+          onClick={handleDowngrade}
+          disabled={disabled || loading === "free" || currentPlan === "free"}
           className="h-7 px-2 text-xs"
         >
           {loading === "free" ? "..." : "Free"}
@@ -76,11 +51,11 @@ export function PlanSwitcher({ currentPlan, onPlanChange, compact = false, disab
         <Button
           variant={currentPlan === "pro" ? "default" : "outline"}
           size="sm"
-          onClick={() => handlePlanChange("pro")}
-          disabled={disabled || loading === "pro"}
+          onClick={handleUpgrade}
+          disabled={disabled || loading === "pro" || currentPlan === "pro"}
           className="h-7 px-2 text-xs"
         >
-          {loading === "pro" ? "..." : `Pro ${isAnnual ? '$120/yr' : '$12/mo'}`}
+          {currentPlan === "pro" ? "Pro" : "Upgrade"}
         </Button>
       </div>
     )
@@ -88,22 +63,22 @@ export function PlanSwitcher({ currentPlan, onPlanChange, compact = false, disab
 
   return (
     <div className="flex items-center gap-2 p-4 border-b">
-      <span className="text-sm font-medium">Test User Plan:</span>
+      <span className="text-sm font-medium">Plan:</span>
       <Button
         variant={currentPlan === "free" ? "default" : "outline"}
         size="sm"
-        onClick={() => handlePlanChange("free")}
-        disabled={disabled || loading === "free"}
+        onClick={handleDowngrade}
+        disabled={disabled || loading === "free" || currentPlan === "free"}
       >
         {loading === "free" ? "..." : "Free"}
       </Button>
       <Button
         variant={currentPlan === "pro" ? "default" : "outline"}
         size="sm"
-        onClick={() => handlePlanChange("pro")}
-        disabled={disabled || loading === "pro"}
+        onClick={handleUpgrade}
+        disabled={disabled || currentPlan === "pro"}
       >
-        {loading === "pro" ? "..." : "Pro"}
+        {currentPlan === "pro" ? "Pro" : "Upgrade to Pro"}
       </Button>
       <Badge variant={currentPlan === "pro" ? "default" : "secondary"}>
         Current: {currentPlan.toUpperCase()}
