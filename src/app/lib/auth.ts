@@ -5,9 +5,12 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { stripe } from "@better-auth/stripe";
 import Stripe from "stripe";
 
-const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-08-27.basil",
-});
+// Only initialize Stripe if we have the required environment variables
+const stripeClient = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-08-27.basil",
+    })
+  : null;
 
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
@@ -28,31 +31,36 @@ export const auth = betterAuth({
         updateAge: 60 * 60 * 24, // 1 day
     },
     plugins: [
-        stripe({
-            stripeClient,
-            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-            createCustomerOnSignUp: true,
-            subscription: {
-                enabled: true,
-                plans: [
-                    {
-                        name: "free",
-                        priceId: process.env.STRIPE_FREE_PRICE_ID || "", // Free plan doesn't need a price ID
-                        limits: {
-                            projects: 1,
-                            storage: 1
+        // Only add Stripe plugin if we have the required configuration
+        ...(stripeClient && process.env.STRIPE_WEBHOOK_SECRET ? [
+            stripe({
+                stripeClient,
+                stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+                createCustomerOnSignUp: true,
+                subscription: {
+                    enabled: true,
+                    plans: [
+                        {
+                            name: "free",
+                            priceId: "", // Free plan doesn't need a price ID
+                            limits: {
+                                projects: 1,
+                                storage: 1
+                            }
+                        },
+                        {
+                            name: "pro",
+                            priceId: process.env.STRIPE_PRO_PRICE_ID || "price_placeholder",
+                            limits: {
+                                projects: 10,
+                                storage: 10
+                            }
                         }
-                    },
-                    {
-                        name: "pro",
-                        priceId: process.env.STRIPE_PRO_PRICE_ID!,
-                        limits: {
-                            projects: 10,
-                            storage: 10
-                        }
-                    }
-                ]
-            }
-        })
+                    ]
+                }
+            })
+        ] : [])
     ]
 });
+
+export default auth;
