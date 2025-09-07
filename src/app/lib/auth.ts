@@ -76,7 +76,7 @@ export const auth = betterAuth({
             stripeClient,
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
             stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder",
-            createCustomerOnSignUp: false, // Disable automatic customer creation to prevent signup failures
+            createCustomerOnSignUp: false, // Keep disabled for signup reliability
             onCustomerCreate: async ({ stripeCustomer, user }) => {
                 console.log(`Stripe customer ${stripeCustomer.id} created for user ${user.id}`);
             },

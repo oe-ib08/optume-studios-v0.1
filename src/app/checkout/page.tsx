@@ -51,6 +51,7 @@ function CheckoutContent() {
     setIsProcessing(true);
     try {
       // Ensure user has a Stripe customer before checkout
+      console.log("Creating/verifying Stripe customer...");
       const customerResponse = await fetch('/api/create-customer', {
         method: 'POST',
         headers: {
@@ -59,10 +60,15 @@ function CheckoutContent() {
       });
       
       if (!customerResponse.ok) {
-        console.warn("Failed to create/verify customer, continuing with checkout...");
+        const error = await customerResponse.json();
+        throw new Error(`Failed to create customer: ${error.error || 'Unknown error'}`);
       }
+      
+      const customerData = await customerResponse.json();
+      console.log("Customer creation result:", customerData);
 
       // Use the better-auth stripe plugin to create checkout session
+      console.log("Creating checkout session...");
       const result = await authClient.subscription.upgrade({
         plan: "pro",
         annual: isYearly,
@@ -70,10 +76,13 @@ function CheckoutContent() {
       
       if (result.data?.url) {
         // Redirect to Stripe Checkout
+        console.log("Redirecting to Stripe checkout:", result.data.url);
         window.location.href = result.data.url;
       } else if (result.error) {
+        console.error("Checkout session error:", result.error);
         throw new Error(result.error.message || "Failed to create checkout session");
       } else {
+        console.error("No checkout URL received:", result);
         throw new Error("No checkout URL received");
       }
     } catch (error) {
