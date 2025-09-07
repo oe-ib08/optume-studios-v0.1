@@ -5,6 +5,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { stripe } from "@better-auth/stripe";
 import Stripe from "stripe";
 
+// Auth configuration with Stripe integration
+
 // Only initialize Stripe if we have the required environment variables
 const stripeClient = process.env.STRIPE_SECRET_KEY 
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
