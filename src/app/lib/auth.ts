@@ -7,12 +7,10 @@ import Stripe from "stripe";
 
 // Auth configuration with Stripe integration
 
-// Only initialize Stripe if we have the required environment variables
-const stripeClient = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-08-27.basil",
-    })
-  : null;
+// Initialize Stripe client with environment variable
+const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
+    apiVersion: "2025-08-27.basil",
+});
 
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
@@ -33,36 +31,33 @@ export const auth = betterAuth({
         updateAge: 60 * 60 * 24, // 1 day
     },
     plugins: [
-        // Only add Stripe plugin if we have the required configuration
-        ...(stripeClient && process.env.STRIPE_WEBHOOK_SECRET ? [
-            stripe({
-                stripeClient,
-                stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-                createCustomerOnSignUp: true,
-                subscription: {
-                    enabled: true,
-                    plans: [
-                        {
-                            name: "free",
-                            priceId: "", // Free plan doesn't need a price ID
-                            limits: {
-                                projects: 1,
-                                storage: 1
-                            }
-                        },
-                        {
-                            name: "pro",
-                            priceId: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || "price_placeholder",
-                            annualDiscountPriceId: process.env.STRIPE_PRO_YEARLY_PRICE_ID || "price_placeholder_yearly",
-                            limits: {
-                                projects: 10,
-                                storage: 10
-                            }
+        stripe({
+            stripeClient,
+            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
+            createCustomerOnSignUp: true,
+            subscription: {
+                enabled: true,
+                plans: [
+                    {
+                        name: "free",
+                        priceId: "", // Free plan doesn't need a price ID
+                        limits: {
+                            projects: 1,
+                            storage: 1
                         }
-                    ]
-                }
-            })
-        ] : [])
+                    },
+                    {
+                        name: "pro",
+                        priceId: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || "price_1S4YsEBCVKaOb1T6YCZhPodW",
+                        annualDiscountPriceId: process.env.STRIPE_PRO_YEARLY_PRICE_ID || "price_1S4YsTBCVKaOb1T6NbvpojYC",
+                        limits: {
+                            projects: 10,
+                            storage: 10
+                        }
+                    }
+                ]
+            }
+        })
     ]
 });
 
