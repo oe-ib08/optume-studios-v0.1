@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Logo from "@/components/navbar-components/logo"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,21 +16,47 @@ import {
 } from "@/components/ui/popover"
 import { UserAvatar } from "@/components/user-avatar"
 import { useSession } from "@/app/lib/auth-client"
+import { authClient } from "@/app/lib/auth-client"
 import Link from "next/link"
+import { Sparkles } from "lucide-react"
+import SearchBar from "@/components/search-bar"
+import { PlanSwitcher } from "@/components/plan-switcher"
 
 // Navigation links array to be used in both desktop and mobile menus
 const navigationLinks = [
-  { href: "#", label: "Home", active: true },
-  { href: "#", label: "Features" },
-  { href: "#", label: "Pricing" },
+  { href: "/", label: "Home", active: true },
+  { href: "#", label: "Submit" },
+  { href: "#", label: "Messages" },
   { href: "#", label: "About" },
 ]
 
 export default function Header() {
   const { data: session, isPending } = useSession()
+  const [userPlan, setUserPlan] = useState<"free" | "pro">("free")
+
+  // Fetch user's active subscriptions
+  useEffect(() => {
+    if (session?.user) {
+      authClient.subscription.list({})
+        .then(({ data, error }) => {
+          if (data && !error) {
+            // Set user plan based on active subscription
+            const activeSubscription = data.find((sub) => sub.status === "active")
+            if (activeSubscription) {
+              setUserPlan(activeSubscription.plan as "free" | "pro")
+            }
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching subscriptions:", error)
+        })
+    }
+  }, [session?.user])
 
   return (
-    <header className="border-b px-4 md:px-6">
+    <>
+      {/* Development plan switcher - remove in production */}
+      <header className="border-b px-4 md:px-6">
       <div className="flex h-16 items-center justify-between gap-4">
         {/* Left side */}
         <div className="flex items-center gap-2">
@@ -107,6 +134,8 @@ export default function Header() {
                 ))}
               </NavigationMenuList>
             </NavigationMenu>
+            {/* Search bar */}
+            <SearchBar className="max-md:hidden" placeholder="Search..." />
           </div>
         </div>
         {/* Right side */}
@@ -114,13 +143,37 @@ export default function Header() {
           {isPending ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : session ? (
-            <UserAvatar 
-              user={{
-                name: session.user.name,
-                email: session.user.email,
-                image: session.user.image || undefined
-              }} 
-            />
+            <>
+              {/* Show upgrade button only for free users */}
+              {userPlan === "free" && (
+                <Button 
+                  size="sm" 
+                  className="text-sm max-sm:aspect-square max-sm:p-0"
+                >
+                  <Sparkles
+                    className="opacity-60 sm:-ms-1"
+                    size={16}
+                    aria-hidden="true"
+                  />
+                  <span className="max-sm:sr-only">Upgrade to Pro</span>
+                </Button>
+              )}
+              {/* Development plan switcher */}
+              <div className="max-sm:hidden">
+                <PlanSwitcher 
+                  currentPlan={userPlan} 
+                  compact={true}
+                />
+              </div>
+              <UserAvatar 
+                user={{
+                  name: session.user.name,
+                  email: session.user.email,
+                  image: session.user.image || undefined,
+                  plan: userPlan
+                }} 
+              />
+            </>
           ) : (
             <>
               <Button asChild variant="ghost" size="sm" className="text-sm">
@@ -134,5 +187,6 @@ export default function Header() {
         </div>
       </div>
     </header>
+    </>
   )
 }

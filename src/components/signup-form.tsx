@@ -23,7 +23,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { signUp } from "@/app/lib/auth-client"
-import { set, z } from "zod"
+import { z } from "zod"
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -66,7 +66,7 @@ export function SignupForm({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const result = await signUp.email({
+      await signUp.email({
         email: values.email,
         password: values.password,
         name: values.username,

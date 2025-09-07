@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { signOut } from "@/app/lib/auth-client"
 
 interface UserAvatarProps {
@@ -18,6 +19,7 @@ interface UserAvatarProps {
     name: string
     email: string
     image?: string
+    plan?: string
   }
 }
 
@@ -46,12 +48,28 @@ export function UserAvatar({ user }: UserAvatarProps) {
               {initials}
             </AvatarFallback>
           </Avatar>
+          {/* Plan badge positioned on bottom-right of avatar */}
+          <Badge 
+            variant={user.plan === "pro" ? "default" : "secondary"}
+            className="absolute -bottom-1 -right-1 h-4 px-1 text-[8px] font-medium leading-none"
+          >
+            {user.plan === "pro" ? "PRO" : "FREE"}
+          </Badge>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium leading-none">{user.name}</p>
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                user.plan === "pro" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                {user.plan === "pro" ? "PRO" : "FREE"}
+              </span>
+            </div>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
