@@ -50,6 +50,18 @@ function CheckoutContent() {
     
     setIsProcessing(true);
     try {
+      // Ensure user has a Stripe customer before checkout
+      const customerResponse = await fetch('/api/create-customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!customerResponse.ok) {
+        console.warn("Failed to create/verify customer, continuing with checkout...");
+      }
+
       // Use the better-auth stripe plugin to create checkout session
       const result = await authClient.subscription.upgrade({
         plan: "pro",

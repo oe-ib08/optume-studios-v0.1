@@ -62,6 +62,7 @@ export const auth = betterAuth({
             stripeClient,
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
             createCustomerOnSignUp: false, // Disable automatic customer creation to prevent signup failures
+            ensureCustomerExists: true, // Ensure customer exists when needed
             subscription: {
                 enabled: true,
                 plans: [
