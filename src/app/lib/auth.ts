@@ -23,6 +23,12 @@ export async function createStripeCustomer(userData: { id: string; email: string
             return null;
         }
 
+        // Only proceed if database is properly initialized
+        if (!db || typeof db.select !== 'function') {
+            console.log("Database not initialized, skipping customer creation");
+            return null;
+        }
+
         // Check if user already has a customer ID in the database
         const existingUser = await db.select().from(user).where(eq(user.id, userData.id)).limit(1);
         if (existingUser[0]?.stripeCustomerId) {
@@ -54,17 +60,17 @@ export async function createStripeCustomer(userData: { id: string; email: string
 }
 
 export const auth = betterAuth({
-    database: drizzleAdapter(db, {
+    database: db && typeof db.select === 'function' ? drizzleAdapter(db, {
         provider: "pg", // or "mysql", "sqlite"
-    }),
+    }) : undefined,
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: false, // Set to true if you want email verification
     },
     socialProviders: {
         google: {
-            clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            clientId: process.env.GOOGLE_CLIENT_ID || "placeholder",
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
         },
     },
     session: {

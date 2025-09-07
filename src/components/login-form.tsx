@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -70,7 +69,7 @@ export function LoginForm({
         password: values.password,
       });
       toast.success("Signed in successfully!");
-      router.push('/');
+      router.push('/dashboard');
     } catch (error) {
       toast.error("Failed to sign in. Please check your credentials.");
       console.error("Login error:", error);
@@ -84,7 +83,7 @@ export function LoginForm({
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
-            Login with your Google account
+            Sign in to your account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -118,9 +117,6 @@ export function LoginForm({
                         <FormControl>
                           <Input placeholder="m@example.com" {...field} />
                         </FormControl>
-                        <FormDescription>
-                          This is your public display name.
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -137,9 +133,6 @@ export function LoginForm({
                           <FormControl>
                             <Input placeholder="••••••••" type="password" {...field} />
                           </FormControl>
-                          <FormDescription>
-                            This is your public display name.
-                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -152,14 +145,14 @@ export function LoginForm({
                     </a>
                   </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Login"}
+                  {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Sign In"}
                 </Button>
               </div>
             </div>
             </div>
             <div className="text-center text-sm">
               Don&apos;t have an account?{" "}
-              <a href="#" className="underline underline-offset-4">
+              <a href="/signup" className="underline underline-offset-4">
                 Sign up
               </a>
             </div>
