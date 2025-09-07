@@ -34,13 +34,29 @@ export const auth = betterAuth({
         stripe({
             stripeClient,
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
-            createCustomerOnSignUp: false, // Disable automatic customer creation to avoid errors
+            createCustomerOnSignUp: true, // Enable automatic customer creation
+            onCustomerCreate: async ({ stripeCustomer, user }) => {
+                // Do something with the newly created customer
+                console.log(`Stripe customer ${stripeCustomer.id} created for user ${user.id}`);
+            },
+
+            getCustomerCreateParams: async ({ user }) => {
+                // Customize the Stripe customer creation parameters
+                return {
+                    name: user.name,
+                    email: user.email,
+                    metadata: {
+                        userId: user.id,
+                        referralSource: "direct" // You can customize this based on your needs
+                    }
+                };
+            },
             subscription: {
                 enabled: true,
                 plans: [
                     {
                         name: "free",
-                        priceId: "", // Free plan doesn't need a price ID
+                        priceId: "", 
                         limits: {
                             projects: 1,
                             storage: 1

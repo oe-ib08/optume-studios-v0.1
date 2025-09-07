@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useSession } from "@/app/lib/auth-client";
-import { authClient } from "@/app/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

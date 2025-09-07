@@ -1,29 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "@/app/lib/auth-client";
 import { authClient } from "@/app/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, ArrowLeft, CreditCard } from "lucide-react";
 import Link from "next/link";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const { data: session, isPending } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const plan = searchParams.get("plan") || "pro";
   const billing = searchParams.get("billing") || "monthly";
   const isYearly = billing === "yearly";
   
   // Price information
   const monthlyPrice = 12;
   const yearlyPrice = 120;
-  const yearlyMonthly = Math.round(yearlyPrice / 12);
   const savings = monthlyPrice * 12 - yearlyPrice;
   
   const features = [
@@ -249,5 +247,22 @@ export default function CheckoutPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-48 mx-auto mb-4"></div>
+            <div className="h-4 bg-muted rounded w-32 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }
