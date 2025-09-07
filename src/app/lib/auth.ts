@@ -23,12 +23,6 @@ export async function createStripeCustomer(userData: { id: string; email: string
             return null;
         }
 
-        // Only proceed if database is properly initialized
-        if (!db || typeof db.select !== 'function') {
-            console.log("Database not initialized, skipping customer creation");
-            return null;
-        }
-
         // Check if user already has a customer ID in the database
         const existingUser = await db.select().from(user).where(eq(user.id, userData.id)).limit(1);
         if (existingUser[0]?.stripeCustomerId) {
@@ -60,9 +54,9 @@ export async function createStripeCustomer(userData: { id: string; email: string
 }
 
 export const auth = betterAuth({
-    database: db && typeof db.select === 'function' ? drizzleAdapter(db, {
+    database: drizzleAdapter(db, {
         provider: "pg", // or "mysql", "sqlite"
-    }) : undefined,
+    }),
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: false, // Set to true if you want email verification
@@ -81,7 +75,7 @@ export const auth = betterAuth({
         stripe({
             stripeClient,
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
-            createCustomerOnSignUp: true, // Re-enable customer creation
+            createCustomerOnSignUp: false, // Disable automatic customer creation to prevent signup failures
             onCustomerCreate: async ({ stripeCustomer, user }) => {
                 console.log(`Stripe customer ${stripeCustomer.id} created for user ${user.id}`);
             },
