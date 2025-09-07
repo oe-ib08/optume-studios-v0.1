@@ -12,6 +12,33 @@ const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeh
     apiVersion: "2025-08-27.basil",
 });
 
+// Helper function to create Stripe customer after user signup
+export async function createStripeCustomer(user: { id: string; email: string; name: string }) {
+    try {
+        // Only create if Stripe is properly configured
+        if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === "sk_test_placeholder") {
+            console.log("Stripe not configured, skipping customer creation");
+            return null;
+        }
+
+        const customer = await stripeClient.customers.create({
+            email: user.email,
+            name: user.name,
+            metadata: {
+                userId: user.id,
+                referralSource: "direct"
+            }
+        });
+        
+        console.log(`Stripe customer ${customer.id} created for user ${user.id}`);
+        return customer;
+    } catch (error) {
+        console.error("Failed to create Stripe customer:", error);
+        // Don't throw error to prevent user signup failure
+        return null;
+    }
+}
+
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
         provider: "pg", // or "mysql", "sqlite"
@@ -34,23 +61,7 @@ export const auth = betterAuth({
         stripe({
             stripeClient,
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
-            createCustomerOnSignUp: true, // Enable automatic customer creation
-            onCustomerCreate: async ({ stripeCustomer, user }) => {
-                // Do something with the newly created customer
-                console.log(`Stripe customer ${stripeCustomer.id} created for user ${user.id}`);
-            },
-
-            getCustomerCreateParams: async ({ user }) => {
-                // Customize the Stripe customer creation parameters
-                return {
-                    name: user.name,
-                    email: user.email,
-                    metadata: {
-                        userId: user.id,
-                        referralSource: "direct" // You can customize this based on your needs
-                    }
-                };
-            },
+            createCustomerOnSignUp: false, // Disable automatic customer creation to prevent signup failures
             subscription: {
                 enabled: true,
                 plans: [
