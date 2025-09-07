@@ -9,10 +9,14 @@ import Stripe from "stripe";
 
 // Auth configuration with Stripe integration
 
-// Initialize Stripe client with environment variable
-const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-08-27.basil",
-});
+// Initialize Stripe client with environment variable - only if available
+let stripeClient: Stripe | undefined;
+
+if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.length > 0) {
+    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: "2025-08-27.basil",
+    });
+}
 
 // Helper function to create Stripe customer after user signup
 export async function createStripeCustomer(userData: { id: string; email: string; name: string }) {
@@ -30,6 +34,11 @@ export async function createStripeCustomer(userData: { id: string; email: string
             return { id: existingUser[0].stripeCustomerId };
         }
 
+        // Create Stripe customer
+        if (!stripeClient) {
+            throw new Error("Stripe client not initialized");
+        }
+        
         const customer = await stripeClient.customers.create({
             email: userData.email,
             name: userData.name,
@@ -53,29 +62,17 @@ export async function createStripeCustomer(userData: { id: string; email: string
     }
 }
 
-export const auth = betterAuth({
-    database: drizzleAdapter(db, {
-        provider: "pg", // or "mysql", "sqlite"
-    }),
-    emailAndPassword: {
-        enabled: true,
-        requireEmailVerification: false, // Set to true if you want email verification
-    },
-    socialProviders: {
-        google: {
-            clientId: process.env.GOOGLE_CLIENT_ID || "placeholder",
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
-        },
-    },
-    session: {
-        expiresIn: 60 * 60 * 24 * 7, // 7 days
-        updateAge: 60 * 60 * 24, // 1 day
-    },
-    plugins: [
+const authPlugins = [];
+
+// Only add Stripe plugin if properly configured
+if (stripeClient && 
+    process.env.STRIPE_WEBHOOK_SECRET && 
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+    authPlugins.push(
         stripe({
             stripeClient,
-            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-            stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+            stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
             createCustomerOnSignUp: false, // Keep disabled for signup reliability
             onCustomerCreate: async ({ stripeCustomer, user }) => {
                 console.log(`Stripe customer ${stripeCustomer.id} created for user ${user.id}`);
@@ -113,7 +110,28 @@ export const auth = betterAuth({
                 ]
             }
         })
-    ]
+    );
+}
+
+export const auth = betterAuth({
+    database: drizzleAdapter(db, {
+        provider: "pg", // or "mysql", "sqlite"
+    }),
+    emailAndPassword: {
+        enabled: true,
+        requireEmailVerification: false, // Set to true if you want email verification
+    },
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID || "placeholder",
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder",
+        },
+    },
+    session: {
+        expiresIn: 60 * 60 * 24 * 7, // 7 days
+        updateAge: 60 * 60 * 24, // 1 day
+    },
+    plugins: authPlugins
 });
 
 export default auth;
